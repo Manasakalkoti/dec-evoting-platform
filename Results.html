@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Election Results (Live)</title>
+
+  <!-- Web3.js -->
+  <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.0.0-beta.34/dist/web3.min.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f8f4ff;
+      color: #333;
+      margin-top: 40px;
+    }
+
+    h2 {
+      color: #4B0082;
+      font-weight: 600;
+    }
+
+    progress {
+      width: 60%;
+      height: 18px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+    }
+
+    #turnout {
+      margin-top: 25px;
+      font-size: 18px;
+      color: #4B0082;
+    }
+
+    #updated {
+      margin-top: 10px;
+      font-size: 12px;
+      color: gray;
+    }
+
+    .nav {
+      background: #ff4d00;
+      padding: 12px;
+    }
+
+    .nav a {
+      color: white;
+      text-decoration: none;
+      margin: 0 15px;
+      font-weight: bold;
+    }
+
+    .nav a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Navigation -->
+  <div class="nav">
+    <a href="./VoterVerification1.html">Voter Image Verification</a>
+    <a href="./VoterVerification2.html">Voter Adhaar Verification</a>
+    <a href="./VotingPortal.html">Voting Portal</a>
+    <a href="./AdminVerification1.html">Admin Portal</a>
+    <a href="./Results.html">Results</a>
+  </div>
+
+  <h2>🗳️ Live Election Results</h2>
+
+  <div id="results"></div>
+  <div id="turnout"></div>
+  <div id="updated"></div>
+  <p style="color:gray;font-size:12px;">Auto-refreshes every 10 seconds (Live Blockchain Data)</p>
+
+  <script>
+    async function loadLiveResults() {
+      if (typeof window.ethereum === 'undefined') {
+        alert("Please connect MetaMask to view results.");
+        return;
+      }
+    
+      const web3 = new Web3(window.ethereum);
+      await window.ethereum.enable();
+    
+      // Load contract info
+      const contractData = await fetch('./build/contracts/VoteTracker.json').then(res => res.json());
+      const networkId = await web3.eth.net.getId();
+      const contractAddress = contractData.networks[networkId].address;
+      const contract = new web3.eth.Contract(contractData.abi, contractAddress);
+    
+      // Fetch party count
+      const partyCount = await contract.methods.getPartyCount().call();
+      let html = '';
+      let totalVotes = 0;
+    
+      for (let i = 1; i <= partyCount; i++) {
+        const result = await contract.methods.getNames(i).call(); 
+        // result[0] = voteCount, result[1] = partyName
+        const votes = parseInt(result[0]);
+        const partyName = result[1];
+        totalVotes += votes;
+    
+        html += `
+          <p><b>${partyName}</b>: ${votes} votes</p>
+          <progress value="${votes}" max="100"></progress>
+        `;
+      }
+    
+      // Display results
+      document.getElementById('results').innerHTML = html;
+    
+      // Get voter count (total number of voters)
+      const voterCount = await contract.methods.voterCount().call();
+      const turnout = ((totalVotes / voterCount) * 100).toFixed(2);
+    
+      document.getElementById('turnout').innerHTML =
+        `<b>Voter Turnout:</b> ${turnout}% (${totalVotes}/${voterCount} votes)`;
+    
+      document.getElementById('updated').innerHTML =
+        `Last updated: ${new Date().toLocaleTimeString()}`;
+    }
+    
+    // Run immediately and refresh every 10 seconds
+    loadLiveResults();
+    setInterval(loadLiveResults, 10000);
+    </script>
+    
+    
