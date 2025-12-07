@@ -1,4 +1,4 @@
-📌 E-Voting dApp — Decentralized Voting Prototype
+E-Voting dApp — Decentralized Voting Prototype
 
 A decentralized voting prototype built using Ethereum smart contracts, Truffle, Ganache, and Web3.js.
 This project demonstrates how blockchain can provide transparent, tamper-proof vote storage and a complete voting workflow.
